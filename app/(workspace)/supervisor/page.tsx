@@ -4,6 +4,7 @@ import { formatDateTime, formatYards } from "@/lib/format";
 import { requireRole } from "@/lib/server/guards";
 import { listOrders, listRecipes } from "@/lib/server/queries";
 import { CreateOrderDialog } from "./create-order-dialog";
+import { SubmitOrderButton } from "./submit-order-button";
 
 export default function Page() {
   return (
@@ -45,6 +46,9 @@ async function SupervisorWorkspace() {
                 <th scope="col" className="px-4 py-3 text-right font-semibold">Fabric used / std</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Status</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Created</th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-900">
@@ -74,6 +78,11 @@ async function SupervisorWorkspace() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-slate-700">
                       {formatDateTime(order.created_at)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.status === "CUTTING_IN_PROGRESS" && (
+                        <SubmitOrderButton orderId={order.id} orderNo={order.order_no} />
+                      )}
                     </td>
                   </tr>
                 );
