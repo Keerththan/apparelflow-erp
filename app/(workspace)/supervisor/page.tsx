@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { OrderStatusBadge } from "@/components/order-status-badge";
 import { formatDateTime, formatYards } from "@/lib/format";
 import { requireRole } from "@/lib/server/guards";
-import { listOrders } from "@/lib/server/queries";
+import { listOrders, listRecipes } from "@/lib/server/queries";
+import { CreateOrderDialog } from "./create-order-dialog";
 
 export default function Page() {
   return (
@@ -14,7 +15,7 @@ export default function Page() {
 
 async function SupervisorWorkspace() {
   await requireRole("cutting_supervisor");
-  const orders = await listOrders();
+  const [orders, recipes] = await Promise.all([listOrders(), listRecipes()]);
 
   return (
     <div className="space-y-6">
@@ -25,6 +26,7 @@ async function SupervisorWorkspace() {
             Create batches from production recipes and send them to QC.
           </p>
         </div>
+        <CreateOrderDialog recipes={recipes} />
       </div>
 
       {orders.length === 0 ? (
