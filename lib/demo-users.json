@@ -1,0 +1,20 @@
+[
+  {
+    "email": "supervisor@apparelflow.demo",
+    "password": "Supervisor#2026",
+    "full_name": "Nimal Perera",
+    "role": "cutting_supervisor"
+  },
+  {
+    "email": "verifier@apparelflow.demo",
+    "password": "Verifier#2026",
+    "full_name": "Kavindi Silva",
+    "role": "cutting_verifier"
+  },
+  {
+    "email": "sewing@apparelflow.demo",
+    "password": "Sewing#2026",
+    "full_name": "Tharindu Fernando",
+    "role": "sewing_supervisor"
+  }
+]
