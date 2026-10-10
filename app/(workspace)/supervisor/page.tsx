@@ -4,6 +4,7 @@ import { formatDateTime, formatYards } from "@/lib/format";
 import { requireRole } from "@/lib/server/guards";
 import { listOrders, listRecipes } from "@/lib/server/queries";
 import { CreateOrderDialog } from "./create-order-dialog";
+import { RecutOrderButton } from "./recut-order-button";
 import { SubmitOrderButton } from "./submit-order-button";
 
 export default function Page() {
@@ -82,6 +83,14 @@ async function SupervisorWorkspace() {
                     <td className="px-4 py-3">
                       {order.status === "CUTTING_IN_PROGRESS" && (
                         <SubmitOrderButton orderId={order.id} orderNo={order.order_no} />
+                      )}
+                      {order.status === "REJECTED" && (
+                        <RecutOrderButton
+                          orderId={order.id}
+                          orderNo={order.order_no}
+                          currentFabricYds={Number(order.actual_fabric_yds)}
+                          rejectionNote={rejection?.rejection_note ?? null}
+                        />
                       )}
                     </td>
                   </tr>
