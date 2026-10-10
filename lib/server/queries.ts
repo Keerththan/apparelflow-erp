@@ -78,3 +78,56 @@ export async function listOrders(): Promise<OrderSummary[]> {
     logs: [...o.logs].sort((a, b) => b.created_at.localeCompare(a.created_at)),
   }));
 }
+
+export type VerificationItemRow = {
+  id: string;
+  expected_qty: number;
+  actual_qty: number | null;
+  status: "GREEN" | "YELLOW" | "RED" | null;
+  component: { component_name: string; pieces_per_garment: number; sort_order: number };
+};
+
+export type OrderDetail = Omit<OrderSummary, "logs"> & {
+  items: VerificationItemRow[];
+  verifier: { full_name: string } | null;
+  logs: (OrderSummary["logs"][number] & {
+    wastage_pct: number | null;
+    variances: {
+      component_name: string;
+      expected_qty: number;
+      actual_qty: number | null;
+      variance: number | null;
+      status: "GREEN" | "YELLOW" | "RED" | null;
+    }[];
+  })[];
+};
+
+/** One order with its component counts; null when missing or hidden by RLS. */
+export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data, error } = await (await db())
+    .from("cutting_orders")
+    .select(
+      `id, order_no, status, target_qty, fabric_roll_id, actual_fabric_yds,
+       expected_fabric_yds, wastage_pct, created_at, submitted_at, verified_at,
+       recipe:recipes(recipe_code, name, wastage_cap),
+       creator:profiles!cutting_orders_created_by_fkey(full_name),
+       verifier:profiles!cutting_orders_verified_by_fkey(full_name),
+       items:verification_items(id, expected_qty, actual_qty, status,
+         component:recipe_components(component_name, pieces_per_garment, sort_order)),
+       logs:verification_logs(decision, rejection_note, wastage_pct, variances,
+         created_at, verifier:profiles(full_name))`,
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(`Failed to load order: ${error.message}`);
+  if (!data) return null;
+  const order = data as unknown as OrderDetail;
+  return {
+    ...order,
+    items: [...order.items].sort(
+      (a, b) => a.component.sort_order - b.component.sort_order,
+    ),
+    logs: [...order.logs].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+  };
+}
