@@ -35,7 +35,12 @@ export function SessionControls({ currentEmail }: { currentEmail: string }) {
 
   async function signOut() {
     setBusy(true);
-    await createClient().auth.signOut();
+    const { error: signOutError } = await createClient().auth.signOut();
+    if (signOutError) {
+      setBusy(false);
+      setError(signOutError.message);
+      return;
+    }
     router.replace("/login");
     router.refresh();
   }

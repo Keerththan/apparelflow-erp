@@ -40,7 +40,9 @@ async function SessionBar() {
           {ROLE_LABELS[user.role]}
         </span>
       </p>
-      <SessionControls currentEmail={user.email} />
+      {/* Keyed by user: this layout survives a persona switch, so without
+          a key the controls kept their "busy" state and stayed disabled. */}
+      <SessionControls key={user.email} currentEmail={user.email} />
     </div>
   );
 }
