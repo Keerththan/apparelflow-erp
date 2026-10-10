@@ -131,3 +131,61 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     logs: [...order.logs].sort((a, b) => b.created_at.localeCompare(a.created_at)),
   };
 }
+
+export type SewingQueueOrder = {
+  id: string;
+  order_no: string;
+  status: "VERIFIED";
+  target_qty: number;
+  fabric_roll_id: string;
+  actual_fabric_yds: number;
+  expected_fabric_yds: number;
+  wastage_pct: number;
+  verified_at: string;
+  verified_by: { id: string; full_name: string };
+  recipe: { recipe_code: string; name: string; category: string; wastage_cap: number };
+  components: {
+    component_name: string;
+    expected_qty: number;
+    actual_qty: number;
+    variance: number;
+    status: "GREEN" | "YELLOW";
+  }[];
+  audit_notes: {
+    decision: "APPROVED" | "REJECTED";
+    rejection_note: string | null;
+    wastage_pct: number | null;
+    created_at: string;
+    verifier: string;
+  }[];
+};
+
+/** Same database function as GET /api/sewing/queue (VERIFIED only). */
+export async function getSewingQueue(): Promise<SewingQueueOrder[]> {
+  const { data, error } = await (await db()).rpc("get_sewing_queue");
+  if (error) throw new Error(`Failed to load sewing queue: ${error.message}`);
+  return data as SewingQueueOrder[];
+}
+
+export type AssemblyOrder = {
+  id: string;
+  order_no: string;
+  target_qty: number;
+  sewing_started_at: string;
+  recipe: { recipe_code: string; name: string };
+  starter: { full_name: string } | null;
+};
+
+export async function listSewingInProgress(): Promise<AssemblyOrder[]> {
+  const { data, error } = await (await db())
+    .from("cutting_orders")
+    .select(
+      `id, order_no, target_qty, sewing_started_at,
+       recipe:recipes(recipe_code, name),
+       starter:profiles!cutting_orders_sewing_started_by_fkey(full_name)`,
+    )
+    .eq("status", "SEWING_IN_PROGRESS")
+    .order("sewing_started_at", { ascending: false });
+  if (error) throw new Error(`Failed to load assembly line: ${error.message}`);
+  return data as unknown as AssemblyOrder[];
+}
