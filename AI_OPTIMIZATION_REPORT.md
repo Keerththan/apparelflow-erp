@@ -66,8 +66,27 @@ button showed a "not-allowed" cursor and could not be clicked.
 `(workspace)` layout persists across the switch, so the client component
 kept its stale `busy` state. A failed `signOut()` had the same problem.
 
-**Fix:** `key={user.email}` on the controls so React resets state when the
-signed-in user changes, and an error path that re-enables the button.
+**First fix (incomplete):** `key={user.email}` on the controls so React
+resets state when the signed-in user changes, and an error path that
+re-enables the button.
+
+**The real root cause surfaced later.** After signing out, the login page
+came back stuck on *"Signing in…"* with every button disabled until a full
+reload. With `cacheComponents` enabled, Next.js 16 does not unmount pages on
+navigation — it hides them with React `<Activity>` and restores them with
+their state. The AI-written login form never reset its `pending` state after
+a successful sign-in because it assumed the page would be destroyed; the
+same assumption was behind the persona-switcher bug, and the `key` fix only
+covered switching to a *different* user.
+
+**Final fix:** following the Next.js "Preserving UI state" guide, transient
+state (`pending`/`busy`/errors) is reset in a `useLayoutEffect` cleanup,
+which runs when Activity hides the page. The login form also clears the
+typed password at that point so it does not linger in the hidden DOM. All
+other action buttons already reset their state in `finally` blocks.
+**Lesson:** the AI's mental model of the framework was out of date; reading
+the bundled docs for the framework version actually installed found the
+cause.
 
 ### 2.3 Component declared inside render
 
