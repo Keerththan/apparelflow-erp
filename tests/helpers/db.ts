@@ -75,7 +75,12 @@ export function pgRpc(db: PGlite, userId: string): RpcClient {
       const rows = await asUser(db, userId, async () => {
         const result = await db.query<{ j: unknown }>(
           `select to_jsonb(r) as j from public.${fn}(${argList}) r`,
-          names.map((n) => args[n]),
+          // supabase.rpc sends a JSON body, so arrays/objects arrive as jsonb
+          names.map((n) =>
+            args[n] !== null && typeof args[n] === "object"
+              ? JSON.stringify(args[n])
+              : args[n],
+          ),
         );
         return result.rows.map((row) => row.j);
       });
