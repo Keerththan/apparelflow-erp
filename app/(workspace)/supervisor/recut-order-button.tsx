@@ -96,9 +96,14 @@ export function RecutOrderButton({
               className={`${inputClass} mt-1`}
               value={fabric}
               aria-invalid={!parsed.ok ? true : undefined}
+              aria-describedby={!parsed.ok ? `recut-${orderId}-fabric-error` : undefined}
               onChange={(e) => setFabric(e.target.value)}
             />
-            {!parsed.ok && <p className={fieldErrorClass}>{parsed.error}</p>}
+            {!parsed.ok && (
+              <p id={`recut-${orderId}-fabric-error`} className={fieldErrorClass}>
+                {parsed.error}
+              </p>
+            )}
           </div>
           {error && (
             <p role="alert" className="text-sm font-medium text-red-800">
