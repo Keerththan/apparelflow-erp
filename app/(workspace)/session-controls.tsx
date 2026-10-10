@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { buttonClass, inputClass, optionClass } from "@/components/ui";
 import demoUsers from "@/lib/demo-users.json";
 import { ROLE_LABELS, type AppRole } from "@/lib/roles";
@@ -11,6 +11,15 @@ export function SessionControls({ currentEmail }: { currentEmail: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // After sign-out the workspace is hidden by React <Activity>, not
+  // unmounted; reset so signing back in as the same user is not stuck busy.
+  useLayoutEffect(() => {
+    return () => {
+      setBusy(false);
+      setError(null);
+    };
+  }, []);
 
   async function switchPersona(email: string) {
     const persona = demoUsers.find((u) => u.email === email);

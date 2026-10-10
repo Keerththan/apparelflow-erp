@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import {
   buttonClass,
   fieldErrorClass,
@@ -18,6 +18,18 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+
+  // With cacheComponents, Next.js hides this page with React <Activity>
+  // instead of unmounting it after sign-in. Without this cleanup the page
+  // came back after sign-out still "Signing in…" with every button
+  // disabled. Also clears the password so it does not linger in the DOM.
+  useLayoutEffect(() => {
+    return () => {
+      setPending(null);
+      setError(null);
+      setPassword("");
+    };
+  }, []);
 
   async function signIn(loginEmail: string, loginPassword: string) {
     setError(null);
