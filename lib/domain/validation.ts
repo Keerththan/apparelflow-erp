@@ -131,3 +131,56 @@ export function validateCreateOrderInput(
   if (!actualFabricYds.ok) errors.actualFabricYds = actualFabricYds.error;
   return { ok: false, errors };
 }
+
+export type CountEntry = { item_id: string; actual_qty: number | null };
+
+/**
+ * Validates `{ counts: [{ itemId, actualQty }] }`. actualQty may be null
+ * (clears a count) only when `allowClear` is true.
+ */
+export function validateCounts(
+  raw: unknown,
+  { allowClear }: { allowClear: boolean },
+): ParseResult<CountEntry[]> {
+  if (raw === undefined) return { ok: true, value: [] };
+  if (!Array.isArray(raw)) {
+    return { ok: false, error: "counts must be an array" };
+  }
+  if (raw.length > 100) {
+    return { ok: false, error: "Too many counts" };
+  }
+  const entries: CountEntry[] = [];
+  for (const entry of raw) {
+    const record =
+      entry && typeof entry === "object" ? (entry as Record<string, unknown>) : {};
+    const itemId = parseUuid(record.itemId, "Component item");
+    if (!itemId.ok) return itemId;
+    if (record.actualQty === null && allowClear) {
+      entries.push({ item_id: itemId.value, actual_qty: null });
+      continue;
+    }
+    const qty = parseWholeNumber(record.actualQty, {
+      label: "Counted quantity",
+      min: 0,
+      max: 1_000_000,
+    });
+    if (!qty.ok) return qty;
+    entries.push({ item_id: itemId.value, actual_qty: qty.value });
+  }
+  return { ok: true, value: entries };
+}
+
+/** Rejection reason: required, 5-1000 characters after trimming. */
+export function parseRejectionNote(raw: unknown): ParseResult<string> {
+  const note = typeof raw === "string" ? raw.trim() : "";
+  if (note === "") {
+    return { ok: false, error: "A rejection reason is required" };
+  }
+  if (note.length < 5) {
+    return { ok: false, error: "Describe the defect in at least 5 characters" };
+  }
+  if (note.length > 1000) {
+    return { ok: false, error: "Keep the reason under 1000 characters" };
+  }
+  return { ok: true, value: note };
+}
