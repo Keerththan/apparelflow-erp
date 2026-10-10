@@ -107,6 +107,12 @@ is a reminder that a red test can be a bug in the test, not the code.
 
 - Vitest 5 was installed without its `vite` peer dependency — the suite
   would not start until it was added.
+- The AI also never checked Vitest 5's `@types/node` peer range
+  (`^22 || >=24`) against the project's `^20`. Local `npm install` only
+  tolerated it silently, and the first Vercel deploy failed with
+  `ERESOLVE`. Reproduced on a clean clone (`npm ls` reported the invalid
+  peer), fixed by moving to `@types/node@^22` (the Node version actually in
+  use), and verified with a strict-peer install and build from a fresh clone.
 - A type-narrowing helper (`"response" in g`) compiled to
   `Response | undefined`; `tsc` caught it and it was rewritten as an
   explicit discriminated union.
